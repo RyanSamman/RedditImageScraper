@@ -4,12 +4,13 @@ import requests
 
 
 def main():
-	REDDIT_PAGE_URL = 'https://reddit.com/r/liminalspace'
+	REDDIT_PAGE_URL = 'https://old.reddit.com/r/liminalspace'
 
 	html = retrieveHtml(REDDIT_PAGE_URL)
 	imageElements = getImageElements(html)
-	postImageElements = filterPostElements(imageElements)
-	urls = [getSrcFromElement(i) for i in postImageElements]
+	print(*imageElements, sep='\n')
+	#postImageElements = filterPostElements(imageElements)
+	urls = [getSrcFromElement(i) for i in imageElements]
 	deampedUrls = [deampUrl(u) for u in urls]
 
 	print(*deampedUrls, sep="\n")
@@ -46,13 +47,18 @@ def deampUrl(url):
 
 
 def downloadImage(url, i=0):
-	res = requests.get(url, stream=True)
-	if res.status_code != 200:
-		print(f"Image #{i} ({url}) has a status of {res.status_code}!\nAborting!")
-		return
+	res = None
+	try:
+		res = requests.get(url, stream=True)
+	except requests.exceptions.MissingSchema:
+		res = requests.get(f"https://{url[2:]}", stream=True)
+	finally:
+		if res.status_code != 200:
+			print(f"Image #{i} ({url}) has a status of {res.status_code}!\nAborting!")
+			return
 
-	with open(f'{i}.png', 'wb') as out_file:
-		shutil.copyfileobj(res.raw, out_file)
+		with open(f'{i}.png', 'wb') as out_file:
+			shutil.copyfileobj(res.raw, out_file)
 
 
 if __name__ == "__main__":
